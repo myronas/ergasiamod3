@@ -1,0 +1,78 @@
+/* Basic Layout */
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: url('/360_F_107916793_8MPR8uxzajyoGTdGh7S2ciOgZCT5L62J.jpg'); /* Example background image */
+    background-size: cover;
+}
+
+.header {
+    background: #004d40; /* Dark green */
+    color: white;
+    padding: 10px 0;
+    text-align: center;
+}
+
+.main-content {
+    padding: 20px;
+    background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white */
+}
+
+.footer {
+    background: #004d40; /* Dark green */
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+}
+
+/* Navigation Bar */
+.navbar {
+    background-color: #00796b; /* Teal */
+    padding: 10px 0;
+}
+
+.navbar a {
+    color: white;
+    padding: 10px 15px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+/* Buttons */
+button, .btn {
+    background-color: #ff9800; /* Orange */
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover, .btn:hover {
+    background-color: #e65100; /* Darker orange */
+}
+
+/* Forms and Inputs */
+input[type="text"], input[type="email"], input[type="password"], select {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0 20px 0;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+    .main-content, .footer {
+        padding: 15px;
+    }
+
+    .navbar a {
+        padding: 10px;
+        display: block;
+    }
+}

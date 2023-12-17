@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${title} ?: 'Default Title'">Default Title</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <!-- Include Bootstrap & Font Awesome if needed -->
+</head>
+<body>
+<div class="header">
+    <h1>Find the Treasure</h1>
+</div>
+<div class="navbar">
+    <a th:href="@{/}">Home</a>
+    <a th:href="@{/about}">About</a>
+    <a th:href="@{/contact}">Contact</a>
+</div>
+<div class="main-content" th:fragment="content">
+    <!-- Page specific content goes here -->
+</div>
+<div class="footer">
+    <p>Copyright &copy; 2023 Find the Treasure</p>
+</div>
+</body>
+</html>

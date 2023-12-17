@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Main Page</title>
+    <!-- Include CSS, JS, etc. -->
+</head>
+<body>
+<h1>Welcome to Your Dashboard</h1>
+
+<div th:if="${successMessage}" th:text="${successMessage}" style="color: green;"></div>
+<div th:if="${errorMessage}" th:text="${errorMessage}" style="color: red;"></div>
+
+<!-- Create New Item -->
+
+<a th:href="@{/items/new}">Create New Item</a>
+
+<!-- Display Items -->
+<h2>Your Items:</h2>
+<ul>
+    <li th:each="item : ${items}">
+        <span th:text="${item.name}">Item Name</span>
+        <!-- Update Button -->
+        <a th:href="@{/items/{id}/edit(id=${item.id})}">Edit</a>
+        <!-- Delete Button -->
+        <a th:href="@{/items/{id}/delete(id=${item.id})}">Delete</a>
+    </li>
+</ul>
+
+<!-- Logout Button -->
+<form action="#" th:action="@{/logout}" method="post">
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+    <button type="submit">Logout</button>
+</form>
+
+<!-- Other content for logged-in users -->
+</body>
+</html>
