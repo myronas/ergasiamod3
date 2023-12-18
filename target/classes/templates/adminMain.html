@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Admin Dashboard</title>
+    <!-- Include CSS, JS, etc. -->
+</head>
+<body>
+<h1>Admin Dashboard</h1>
+<div th:each="user : ${users}">
+    <h3 th:text="${user.username}">Username</h3>
+    <ul>
+        <li th:each="item : ${user.items}" th:text="${item.name}">Item Name</li>
+    </ul>
+</div>
+<div>
+    <h2>All Items:</h2>
+    <ul>
+        <li th:each="item : ${items}" th:text="${item.name}">Item Name</li>
+    </ul>
+</div>
+<form action="#" th:action="@{/logout}" method="post">
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+    <button type="submit">Logout</button>
+</form>
+
+
+
+</body>
+</html>
