@@ -1,25 +1,35 @@
 package gr.hua.dit.ds.ergasia.service;
 
+import gr.hua.dit.ds.ergasia.entity.Item;
 import gr.hua.dit.ds.ergasia.entity.Role;
 import gr.hua.dit.ds.ergasia.entity.User;
 import gr.hua.dit.ds.ergasia.exception.UsernameAlreadyExistsException;
+import gr.hua.dit.ds.ergasia.repository.ItemRepository;
 import gr.hua.dit.ds.ergasia.repository.UserRepository;
 import jakarta.transaction.Transactional;
+import jakarta.validation.constraints.Email;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private ItemRepository itemRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+    public Optional<User> findById(Integer id) {
+        return userRepository.findById(id);
+    }
 
     public void registerNewUserAccount(User user) throws UsernameAlreadyExistsException {
         if (userRepository.findByUsername(user.getUsername()).isPresent()) {
@@ -53,6 +63,42 @@ public class UserService {
 
     }
 
+    @Transactional
+    public void createAdminUser(User user, String roleName) throws UsernameAlreadyExistsException {
+        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+            throw new UsernameAlreadyExistsException("There is already an account with that username: " + user.getUsername());
+        }//createAdminUser means that an admin creates a new user
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setRole(Role.valueOf(roleName));
+        user.setCreatedAt(LocalDateTime.now());
+        user.setDeletedAt(null);
+
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void softDeleteUser(Integer userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        for (Item item : user.getItems()) {
+            item.setDeletedAt(LocalDateTime.now());
+            itemRepository.save(item);
+        }
+        user.setDeletedAt(LocalDateTime.now());
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void updateUser(Integer userId, User updatedUser, String roleName) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setUsername(updatedUser.getUsername());
+        user.setEmail(updatedUser.getEmail());
+        user.setRole(Role.valueOf(roleName));
+        userRepository.save(user);
+
+
+    }
 }
 
 

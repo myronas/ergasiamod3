@@ -3,6 +3,7 @@ package gr.hua.dit.ds.ergasia.handlers;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
@@ -14,9 +15,13 @@ public class CustomAuthenticationFailureHandler extends SimpleUrlAuthenticationF
 
     @Override
     public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException, ServletException {
-        super.setDefaultFailureUrl("/login?error=true");
-        super.onAuthenticationFailure(request, response, exception);
-        request.getSession().setAttribute("errorMessage", "Invalid username or password.");
+        String errorMessage;
+
+
+            errorMessage = "Invalid username or password.";
+
+
+        request.getSession().setAttribute("errorMessage", errorMessage);
+        getRedirectStrategy().sendRedirect(request, response, "/login?error");
     }
 }
-

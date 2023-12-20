@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:if="${user.id == null}">Create User</title>
+    <title th:if="${user.id != null}">Edit User</title>
+    <!-- Include necessary CSS/JS files -->
+</head>
+<body>
+<h1 th:if="${user.id == null}">Create User</h1>
+<h1 th:if="${user.id != null}">Edit User</h1>
+
+<form th:action="${user.id == null} ? @{/admin/users} : @{/admin/users/update/{userId}(userId=${user.id})}" method="post" th:object="${user}">
+    <!-- Form fields -->
+    <div>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" th:field="*{username}" required />
+    </div>
+    <div>
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" th:field="*{email}" required />
+    </div>
+    <div>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" th:field="*{password}" required />
+    </div>
+    <div>
+        <label for="role">Role:</label>
+        <select id="role" name="role">
+            <option value="PLAYER">Player</option>
+            <option value="ADMIN">Admin</option>
+        </select>
+    </div>
+    <button type="submit" th:text="${user.id == null} ? 'Create User' : 'Update User'">Submit</button>
+</form>
+<div th:if="${errorMessage}" style="color: red;">
+    <p th:text="${errorMessage}"></p>
+</div>
+
+
+<a th:href="@{/admin/main}">Back to Admin Dashboard</a>
+
+</body>
+</html>

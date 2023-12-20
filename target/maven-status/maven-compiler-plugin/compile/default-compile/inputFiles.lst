@@ -4,6 +4,7 @@
 /home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/entity/Item.java
 /home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/exception/UsernameAlreadyExistsException.java
 /home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/entity/Role.java
+/home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/controller/AdminController.java
 /home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/controller/MainController.java
 /home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/exception/DuplicateItemException.java
 /home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/handlers/GlobalExceptionHandler.java

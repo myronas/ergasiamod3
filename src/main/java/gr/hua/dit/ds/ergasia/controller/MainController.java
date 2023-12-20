@@ -5,6 +5,7 @@ import gr.hua.dit.ds.ergasia.entity.User;
 import gr.hua.dit.ds.ergasia.exception.DuplicateItemException;
 import gr.hua.dit.ds.ergasia.service.ItemService;
 import gr.hua.dit.ds.ergasia.service.UserService;
+import jakarta.persistence.Id;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,27 +37,31 @@ public class MainController {
             if (principal != null) {
                 String username = principal.getName();
                 User user = userService.findByUsername(username);
-                List<Item> items = user.getItems();
-
+                List<Item> items = itemService.findAllItemsByUser(user); // Modified method call
+                model.addAttribute("items", items);
+//                logger.warn("bike");
                 // Check if the items list is null or empty
                 if (items == null || items.isEmpty()) {
-                    logger.info("No items found for user: " + username);
+//                    logger.info("No items found for user: " + username);
                     model.addAttribute("noItemsMessage", "You currently have no items.");
                 } else {
                     model.addAttribute("items", items);
                 }
             }
         } catch (Exception e) {
-            logger.error("Error in main method", e);
+//            logger.error("Error in main method", e);
             // You can add a model attribute to show an error message on the page
             model.addAttribute("errorMessage", "An error occurred while fetching your items.");
         }
         return "main";
     }
+
     @GetMapping("/admin/main")
     public String adminMain(Model model) {
-        List<User> allUsers = userService.findAllUsersWithItems(); // Method to be implemented in the service
+        List<User> allUsers = userService.findAllUsersWithItems(); // Already implemented
+        List<Item> allItems = itemService.findAllItemsForAdmin(); // New method
         model.addAttribute("users", allUsers);
+        model.addAttribute("items", allItems);
         return "adminMain";
     }
 
@@ -90,29 +95,26 @@ public class MainController {
         Item item = itemService.findById(id)
                 .orElseThrow(() -> new RuntimeException("Item not found"));
         model.addAttribute("item", item);
-        return "itemEditForm"; // Replace with your actual view name
+        return "itemEditForm"; // The name of your Thymeleaf template for editing items
     }
 
     // Method to process the item update form
     @PostMapping("/items/{id}")
     public String updateItem(@PathVariable Integer id, Item updatedItem, Principal principal, RedirectAttributes redirectAttributes) {
-        String username = principal.getName();
-        Item existingItem = itemService.findById(id)
-                .orElseThrow(() -> new RuntimeException("Item not found"));
-
-        if (!existingItem.getUser().getUsername().equals(username)) {
-            redirectAttributes.addFlashAttribute("errorMessage", "You are not authorized to update this item.");
-            return "redirect:/main";
+        try {
+            itemService.updateItem(id, updatedItem);
+            redirectAttributes.addFlashAttribute("successMessage", "Item updated successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error updating item.");
         }
-
-        updatedItem.setUser(existingItem.getUser()); // Retain the original user
-        itemService.updateItem(id, updatedItem);
         return "redirect:/main";
     }
 
     // Method to delete an item
     @GetMapping("/items/{id}/delete")
     public String deleteItem(@PathVariable Integer id, Principal principal, RedirectAttributes redirectAttributes) {
+        logger.debug("Attempting to delete item with id: " + id);
+
         Item item = itemService.findById(id)
                 .orElseThrow(() -> new RuntimeException("Item not found"));
 
@@ -120,10 +122,15 @@ public class MainController {
             redirectAttributes.addFlashAttribute("errorMessage", "You are not authorized to delete this item.");
             return "redirect:/main";
         }
+        logger.debug("Item found and authorized for deletion: " + item);
 
-        itemService.deleteItem(id);
+        itemService.deleteItem(id); // Now performs a soft delete
+        logger.warn("Item found and authorized for deletion: " + item);
+        redirectAttributes.addFlashAttribute("successMessage", "Item deleted successfully.");
         return "redirect:/main";
     }
+
+
 }
 
 

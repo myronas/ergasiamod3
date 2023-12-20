@@ -4,11 +4,11 @@ gr/hua/dit/ds/ergasia/controller/LoginController.class
 gr/hua/dit/ds/ergasia/handlers/GlobalExceptionHandler.class
 gr/hua/dit/ds/ergasia/handlers/CustomAuthenticationSuccessHandler.class
 gr/hua/dit/ds/ergasia/repository/ItemRepository.class
+gr/hua/dit/ds/ergasia/controller/AdminController.class
 gr/hua/dit/ds/ergasia/controller/RegistrationController.class
 gr/hua/dit/ds/ergasia/controller/MainController.class
 gr/hua/dit/ds/ergasia/entity/Item.class
 gr/hua/dit/ds/ergasia/controller/HomeController$TestDataInitializer.class
-gr/hua/dit/ds/ergasia/config/SecurityConfig$1.class
 gr/hua/dit/ds/ergasia/controller/HomeController.class
 gr/hua/dit/ds/ergasia/service/UserDetailsServiceImpl.class
 gr/hua/dit/ds/ergasia/service/UserService.class

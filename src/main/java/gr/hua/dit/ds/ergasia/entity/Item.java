@@ -94,6 +94,10 @@ public class Item {
         this.user = user;
     }
 
+    public boolean isDeleted() {
+        return deletedAt != null;
+    }
+
 
 
     public Item() {
