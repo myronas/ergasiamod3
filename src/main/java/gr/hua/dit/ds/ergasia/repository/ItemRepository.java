@@ -10,5 +10,6 @@ public interface ItemRepository  extends JpaRepository<Item, Integer> {
     boolean existsByName(String name);
     List<Item> findAllByDeletedAtIsNull();
     List<Item> findByUserAndDeletedAtIsNull(User user);
+    List<Item> findByUserIsNull();
 
 }

@@ -129,6 +129,28 @@ public class MainController {
         redirectAttributes.addFlashAttribute("successMessage", "Item deleted successfully.");
         return "redirect:/main";
     }
+    @GetMapping("/items/hide/{id}")
+    public String hideItem(@PathVariable Integer id, Principal principal, RedirectAttributes redirectAttributes) {
+        try {
+            itemService.hideItem(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Item hidden successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error hiding item.");
+        }
+        return "redirect:/main"; // Redirecting to the main page
+    }
+    @GetMapping("/items/lift")
+    public String liftItem(Principal principal, RedirectAttributes redirectAttributes) {
+        try {
+            String username = principal.getName();
+            itemService.liftHiddenItem(username);
+            redirectAttributes.addFlashAttribute("successMessage", "You've successfully lifted an item.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "No hidden items available to lift.");
+        }
+        return "redirect:/main";
+    }
+
 
 
 }

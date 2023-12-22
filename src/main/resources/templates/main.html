@@ -7,22 +7,27 @@
 <body>
 <h1>Welcome to Your Dashboard</h1>
 
-<div th:if="${successMessage}" th:text="${successMessage}" style="color: green;"></div>
-<div th:if="${errorMessage}" th:text="${errorMessage}" style="color: red;"></div>
+<!-- Feedback Messages -->
+<div th:if="${successMessage}" style="color: green;">
+    <p th:text="${successMessage}"></p>
+</div>
+<div th:if="${errorMessage}" style="color: red;">
+    <p th:text="${errorMessage}"></p>
+</div>
 
-<!-- Create New Item -->
-
+<!-- Create and Lift Item -->
 <a th:href="@{/items/new}">Create New Item</a>
+<a th:href="@{/items/lift}" class="btn btn-info">Lift Hidden Item</a>
 
 <!-- Display Items -->
 <h2>Your Items:</h2>
 <ul>
     <li th:each="item : ${items}">
-        <span th:text="${item.name}">Item Name</span>
-        <!-- Update Button -->
-        <a th:href="@{/items/{id}/edit(id=${item.id})}">Edit</a>
-        <!-- Delete Button -->
-        <a th:href="@{/items/{id}/delete(id=${item.id})}">Delete</a>
+        <span th:text="${item.name}"></span>
+        <!-- Edit, Delete, Hide Buttons -->
+        <a th:href="@{/items/{id}/edit(id=${item.id})}" class="btn btn-primary">Edit</a>
+        <a th:href="@{/items/{id}/delete(id=${item.id})}" class="btn btn-danger">Delete</a>
+        <a th:href="@{/items/hide/{id}(id=${item.id})}" class="btn btn-secondary">Hide</a>
     </li>
 </ul>
 
@@ -31,7 +36,5 @@
     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
     <button type="submit">Logout</button>
 </form>
-
-<!-- Other content for logged-in users -->
 </body>
 </html>
