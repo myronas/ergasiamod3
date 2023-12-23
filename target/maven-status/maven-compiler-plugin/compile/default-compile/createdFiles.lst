@@ -9,6 +9,7 @@ gr/hua/dit/ds/ergasia/controller/RegistrationController.class
 gr/hua/dit/ds/ergasia/controller/MainController.class
 gr/hua/dit/ds/ergasia/entity/Item.class
 gr/hua/dit/ds/ergasia/controller/HomeController$TestDataInitializer.class
+gr/hua/dit/ds/ergasia/config/WebConfig.class
 gr/hua/dit/ds/ergasia/controller/HomeController.class
 gr/hua/dit/ds/ergasia/service/UserDetailsServiceImpl.class
 gr/hua/dit/ds/ergasia/service/UserService.class

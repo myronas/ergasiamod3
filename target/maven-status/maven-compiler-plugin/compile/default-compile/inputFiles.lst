@@ -11,6 +11,7 @@
 /home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/config/SecurityConfig.java
 /home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/controller/RegistrationController.java
 /home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/entity/User.java
+/home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/config/WebConfig.java
 /home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/dto/RegistrationForm.java
 /home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/controller/HomeController.java
 /home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/handlers/CustomAuthenticationSuccessHandler.java

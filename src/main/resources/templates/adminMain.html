@@ -1,38 +1,62 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
+    <meta charset="UTF-8">
     <title>Admin Dashboard</title>
-    <!-- Include CSS, JS, etc. -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body>
-<h1>Admin Dashboard</h1>
-<div th:each="user : ${users}">
-    <div th:if="${user.deletedAt == null}">
-        <h3 th:text="${user.username}">Username</h3>
-        <a th:href="@{/admin/users/edit/{userId}(userId=${user.id})}" class="btn btn-warning">Edit</a>
-        <a th:href="@{/admin/users/delete/{userId}(userId=${user.id})}" class="btn btn-danger">Delete</a>
+
+<div class="container mt-4">
+    <h1>Admin Dashboard</h1>
+
+    <!-- Loop through users -->
+    <div th:each="user : ${users}">
+        <div th:if="${user.deletedAt == null}">
+            <h3 th:text="${user.username}">Username</h3>
+            <a th:href="@{/admin/users/edit/{userId}(userId=${user.id})}" class="btn btn-warning">Edit</a>
+            <a th:href="@{/admin/users/delete/{userId}(userId=${user.id})}" class="btn btn-danger">Delete</a>
+
+            <!-- Display items of the user -->
+            <ul>
+                <li th:each="item : ${user.items}" th:text="${item.name}">Item Name</li>
+            </ul>
+        </div>
+
+        <!-- Display deleted users -->
+        <div th:if="${user.deletedAt != null}" class="text-muted">
+            <h3 th:text="${user.username} + ' (Deleted)'">Username (Deleted)</h3>
+        </div>
+    </div>
+
+    <!-- Display all items -->
+    <div class="mt-5">
+        <h2>All Items:</h2>
         <ul>
-            <li th:each="item : ${user.items}" th:text="${item.name}">Item Name</li>
+            <li th:each="item : ${items}">
+                <span th:text="${item.name}">Item Name</span>
+                <span th:if="${item.deleted}" style="color: red;">(Deleted)</span>
+            </li>
         </ul>
     </div>
-    <div th:if="${user.deletedAt != null}" style="color: red;">
-        <h3 th:text="${user.username} + ' (Deleted)'">Username (Deleted)</h3>
-    </div>
+
+    <!-- Logout Button -->
+    <form action="#" th:action="@{/logout}" method="post" class="mt-4">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+        <button type="submit" class="btn btn-secondary">Logout</button>
+    </form>
+
+    <!-- Create New User Button -->
+    <a th:href="@{/admin/users/create}" class="btn btn-primary mt-3">Create New User</a>
+
+    <!-- Success Message -->
+    <div th:if="${successMessage}" class="alert alert-success mt-3" th:text="${successMessage}"></div>
 </div>
-<div>
-    <h2>All Items:</h2>
-    <ul>
-        <li th:each="item : ${items}">
-            <span th:text="${item.name}">Item Name</span>
-            <span th:if="${item.deleted}" style="color: red;">(Deleted)</span>
-        </li>
-    </ul>
-</div>
-<form action="#" th:action="@{/logout}" method="post">
-    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-    <button type="submit">Logout</button>
-</form>
-<a th:href="@{/admin/users/create}" class="btn btn-primary">Create New User</a>
-<div th:if="${successMessage}" th:text="${successMessage}"></div>
+
+<!-- Bootstrap JS and dependencies -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
 </body>
 </html>
