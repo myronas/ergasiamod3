@@ -1,33 +1,41 @@
 package gr.hua.dit.ds.ergasia.config;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.AuthenticationFailureHandler;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.beans.factory.annotation.Autowired;
-import gr.hua.dit.ds.ergasia.handlers.CustomAuthenticationFailureHandler;
-import gr.hua.dit.ds.ergasia.handlers.CustomAuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import java.io.IOException;
+import gr.hua.dit.ds.ergasia.jwt.AuthTokenFilter;
+import gr.hua.dit.ds.ergasia.jwt.AuthEntryPointJwt;
+import gr.hua.dit.ds.ergasia.jwt.UserDetailsServiceImpl;
 
 @Configuration
-@EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Autowired
-    private CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler;
+    private UserDetailsServiceImpl userDetailsService;
 
     @Autowired
-    private CustomAuthenticationFailureHandler customAuthenticationFailureHandler; // Autowire your custom failure handler
+    private AuthEntryPointJwt unauthorizedHandler;
+
+    @Bean
+    public AuthTokenFilter authenticationJwtTokenFilter() {
+        return new AuthTokenFilter();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
+        return authConfig.getAuthenticationManager();
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -35,28 +43,20 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationFailureHandler failureHandler() {
-        return customAuthenticationFailureHandler; // Use the autowired custom failure handler
-    }
-
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/register", "/login","/about").permitAll()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/player/**").hasRole("PLAYER")
-                        .anyRequest().authenticated())
-                .formLogin(form -> form
-                        .loginPage("/login")
-                        .successHandler(customAuthenticationSuccessHandler)
-                        .failureHandler(customAuthenticationFailureHandler)
-                        .permitAll())
-                .logout(logout -> logout
-                        .logoutUrl("/logout")
-                        .logoutSuccessUrl("/login")
-                        .invalidateHttpSession(true)
-                        .deleteCookies("JSESSIONID"));
+                .csrf().disable()
+                .exceptionHandling().authenticationEntryPoint(unauthorizedHandler)
+                .and()
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and()
+                .authorizeRequests()
+                .requestMatchers("/api/login/**", "/api/register/**").permitAll()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/main/**").authenticated()
+                .anyRequest().authenticated()
+                .and()
+                .addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

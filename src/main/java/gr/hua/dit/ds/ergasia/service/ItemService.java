@@ -52,14 +52,27 @@ public class ItemService {
         }
     }
 
-    public void updateItem(Integer id, Item updatedItem){
+    public boolean updateItem(Integer id, Item updatedItem) {
+        // Find the existing item by id
         Item item = itemRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Item not found"));
+
+        // Check for duplicates except the current item
+        boolean nameExists = itemRepository.existsByNameAndIdNot(updatedItem.getName(), id);
+
+        if(nameExists) {
+            // Throw an exception or return false indicating a duplicate name exists
+            throw new RuntimeException("An item with this name already exists.");
+        }
+
+        // No duplicates, proceed with update
         item.setName(updatedItem.getName());
         // Update other fields as necessary
         item.setUpdatedAt(LocalDateTime.now()); // Update the 'updatedAt' timestamp
         itemRepository.save(item);
+        return true; // Update successful
     }
+
 
     public  void deleteItem(Integer id) {
         logger.debug("Fetching item for soft delete with id: " + id);

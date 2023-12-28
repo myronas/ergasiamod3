@@ -5,25 +5,21 @@ import gr.hua.dit.ds.ergasia.entity.User;
 import gr.hua.dit.ds.ergasia.exception.DuplicateItemException;
 import gr.hua.dit.ds.ergasia.service.ItemService;
 import gr.hua.dit.ds.ergasia.service.UserService;
-import jakarta.persistence.Id;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.Collections;
 import java.util.List;
 
-@Controller
+@RestController
+@RequestMapping("/api/main")
 public class MainController {
     private static final Logger logger = LoggerFactory.getLogger(MainController.class);
-
 
     @Autowired
     private UserService userService;
@@ -31,128 +27,194 @@ public class MainController {
     @Autowired
     private ItemService itemService;
 
-    @GetMapping("/main")
-    public String main(Model model, Principal principal) {
-        try {
-            if (principal != null) {
-                String username = principal.getName();
-                User user = userService.findByUsername(username);
-                List<Item> items = itemService.findAllItemsByUser(user); // Modified method call
-                model.addAttribute("items", items);
-//                logger.warn("bike");
-                // Check if the items list is null or empty
-                if (items == null || items.isEmpty()) {
-//                    logger.info("No items found for user: " + username);
-                    model.addAttribute("noItemsMessage", "You currently have no items.");
-                } else {
-                    model.addAttribute("items", items);
-                }
-            }
-        } catch (Exception e) {
-//            logger.error("Error in main method", e);
-            // You can add a model attribute to show an error message on the page
-            model.addAttribute("errorMessage", "An error occurred while fetching your items.");
-        }
-        return "main";
-    }
+//    @GetMapping("/main")
+//    public ResponseEntity<?> getMainPage(Principal principal) {
+//        if (principal == null) {
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User is not authenticated.");
+//        }
+//        try {
+//            String username = principal.getName();
+//            User user = userService.findByUsername(username);
+//            List<Item> items = itemService.findAllItemsByUser(user);
+//
+//            if (items == null || items.isEmpty()) {
+//                return ResponseEntity.ok("You currently have no items.");
+//            } else {
+//                return ResponseEntity.ok(items);
+//            }
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching items.");
+//        }
+//    }@GetMapping("/items")
+//public ResponseEntity<?> getMyItems(Principal principal) {
+//    if (principal == null) {
+//        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User is not authenticated.");
+//    }
+//
+//    try {
+//        User user = userService.findByUsername(principal.getName());
+//        List<Item> items = itemService.findAllItemsByUser(user);
+//        return ResponseEntity.ok(items);
+//    } catch (Exception e) {
+//        logger.error("Error fetching items", e);
+//        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching items.");
+//    }
+//}
 
-    @GetMapping("/admin/main")
-    public String adminMain(Model model) {
-        List<User> allUsers = userService.findAllUsersWithItems(); // Already implemented
-        List<Item> allItems = itemService.findAllItemsForAdmin(); // New method
-        model.addAttribute("users", allUsers);
-        model.addAttribute("items", allItems);
-        return "adminMain";
-    }
-
-    // Method to show the item creation form
-    @GetMapping("/items/new")
-    public String showNewItemForm(Model model) {
-        model.addAttribute("item", new Item());
-        return "itemForm"; // Replace with your actual view name
-    }
-
-    // Method to process the item creation form
     @PostMapping("/items")
-    public String createItem(Item item, Principal principal, RedirectAttributes redirectAttributes) {
+    public ResponseEntity<?> createItem(@RequestBody Item item, Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User is not authenticated.");
+        }
         try {
             String username = principal.getName();
             User user = userService.findByUsername(username);
             item.setUser(user);
             itemService.saveItem(item);
-            redirectAttributes.addFlashAttribute("successMessage", "Item created successfully.");
+            return ResponseEntity.ok("Item created successfully.");
         } catch (DuplicateItemException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Error creating item.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating item.");
         }
-        return "redirect:/main";
     }
 
-    // Method to show the item update form
-    @GetMapping("/items/{id}/edit")
-    public String showUpdateItemForm(@PathVariable Integer id, Model model) {
-        Item item = itemService.findById(id)
-                .orElseThrow(() -> new RuntimeException("Item not found"));
-        model.addAttribute("item", item);
-        return "itemEditForm"; // The name of your Thymeleaf template for editing items
-    }
+    @PutMapping("/items/{id}")
+    public ResponseEntity<?> updateItem(@PathVariable Integer id, @RequestBody Item updatedItem, Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User is not authenticated.");
+        }
 
-    // Method to process the item update form
-    @PostMapping("/items/{id}")
-    public String updateItem(@PathVariable Integer id, Item updatedItem, Principal principal, RedirectAttributes redirectAttributes) {
         try {
+            Item existingItem = itemService.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Item not found"));
+
+            // Check if the item belongs to the authenticated user
+            String username = principal.getName();
+            if (!existingItem.getUser().getUsername().equals(username)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to update this item.");
+            }
+            if (existingItem.isDeleted()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Item is already deleted and cannot be updated.");
+            }
+
+            // Attempt to update the item, which will check for duplicate names
             itemService.updateItem(id, updatedItem);
-            redirectAttributes.addFlashAttribute("successMessage", "Item updated successfully.");
+            return ResponseEntity.ok("Item updated successfully.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Error updating item.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating item: " + e.getMessage());
         }
-        return "redirect:/main";
     }
 
-    // Method to delete an item
-    @GetMapping("/items/{id}/delete")
-    public String deleteItem(@PathVariable Integer id, Principal principal, RedirectAttributes redirectAttributes) {
-        logger.debug("Attempting to delete item with id: " + id);
 
-        Item item = itemService.findById(id)
-                .orElseThrow(() -> new RuntimeException("Item not found"));
 
-        if (!item.getUser().getUsername().equals(principal.getName())) {
-            redirectAttributes.addFlashAttribute("errorMessage", "You are not authorized to delete this item.");
-            return "redirect:/main";
+    @DeleteMapping("/items/{id}")
+    public ResponseEntity<?> deleteItem(@PathVariable Integer id, Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User is not authenticated.");
         }
-        logger.debug("Item found and authorized for deletion: " + item);
 
-        itemService.deleteItem(id); // Now performs a soft delete
-        logger.warn("Item found and authorized for deletion: " + item);
-        redirectAttributes.addFlashAttribute("successMessage", "Item deleted successfully.");
-        return "redirect:/main";
-    }
-    @GetMapping("/items/hide/{id}")
-    public String hideItem(@PathVariable Integer id, Principal principal, RedirectAttributes redirectAttributes) {
         try {
-            itemService.hideItem(id);
-            redirectAttributes.addFlashAttribute("successMessage", "Item hidden successfully.");
+            Item item = itemService.findById(id).orElse(null);
+
+            // Check if the item exists
+            if (item == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Item not found.");
+            }
+            if(item.isDeleted()){
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Item is already deleted.");
+            }
+
+            String username = principal.getName();
+            if (!item.getUser().getUsername().equals(username)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to delete this item.");
+            }
+
+            itemService.deleteItem(id);
+            return ResponseEntity.ok("Item deleted successfully.");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Error hiding item.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting item: " + e.getMessage());
         }
-        return "redirect:/main"; // Redirecting to the main page
     }
-    @GetMapping("/items/lift")
-    public String liftItem(Principal principal, RedirectAttributes redirectAttributes) {
+//    @GetMapping("/items")
+//    public ResponseEntity<List<Item>> getMyItems(Principal principal) {
+//        if (principal == null) {
+//            // If you want to return a string message in ResponseEntity of type List<Item>, you cannot directly return a string.
+//            // You need to return an empty list with the error status or change the method return type to ResponseEntity<?>.
+//            // For this example, let's return an empty list with the error status:
+//            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.UNAUTHORIZED);
+//        }
+//
+//        try {
+//            User user = userService.findByUsername(principal.getName());
+//            List<Item> items = itemService.findAllItemsByUser(user);
+//
+//            if (items.isEmpty()) {
+//                // Return an empty list with HTTP status 204 - No Content
+//                return new ResponseEntity<>(Collections.emptyList(), HttpStatus.NO_CONTENT);
+//            } else {
+//                // Return the list of items with HTTP status 200 - OK
+//                return new ResponseEntity<>(items, HttpStatus.OK);
+//            }
+//        } catch (Exception e) {
+//            // Log the error for internal tracking
+//            logger.error("Error fetching items", e);
+//
+//            // Return an empty list with HTTP status 500 - Internal Server Error
+//            // You could also return a custom error object if you have one
+//            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
+//    }
+
+
+
+    @PatchMapping("/items/hide/{id}")
+    public ResponseEntity<?> hideItem(@PathVariable Integer id, Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User is not authenticated.");
+        }
+
         try {
             String username = principal.getName();
-            itemService.liftHiddenItem(username);
-            redirectAttributes.addFlashAttribute("successMessage", "You've successfully lifted an item.");
+            User user = userService.findByUsername(username);
+            Item item = itemService.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Item not found"));
+
+            // Check if the item belongs to the user
+            if (!item.getUser().getId().equals(user.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to hide this item.");
+            }
+
+            // Check if the item is already deleted
+            if (item.isDeleted()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Item is already deleted and cannot be hidden.");
+            }
+
+            // Hide the item since it's not deleted
+            itemService.hideItem(id);
+            return ResponseEntity.ok("Item hidden successfully.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "No hidden items available to lift.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error hiding item: " + e.getMessage());
         }
-        return "redirect:/main";
     }
 
 
+    @PatchMapping("/items/lift")
+    public ResponseEntity<?> liftItem(Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User is not authenticated.");
+        }
 
+        try {
+            String username = principal.getName();
+            itemService.liftHiddenItem(username); // Adjust this method to handle only user's items
+            return ResponseEntity.ok("Hidden items lifted successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error lifting hidden items: " + e.getMessage());
+        }
+    }
 }
-
-

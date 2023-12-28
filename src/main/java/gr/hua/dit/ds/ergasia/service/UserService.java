@@ -13,7 +13,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -80,24 +82,37 @@ public class UserService {
     public void softDeleteUser(Integer userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
-        for (Item item : user.getItems()) {
-            item.setDeletedAt(LocalDateTime.now());
-            itemRepository.save(item);
+
+        if (user.getDeletedAt() != null) {
+            throw new RuntimeException("User is already deleted.");
         }
+
+        if (user.getItems() != null) {
+            for (Item item : user.getItems()) {
+                // Assuming 'userId' field in Item entity links it to the User
+                item.setId(0); // Set to 0 or appropriate orphaned state
+                itemRepository.save(item);
+            }
+        }
+
         user.setDeletedAt(LocalDateTime.now());
         userRepository.save(user);
     }
 
+
     @Transactional
-    public void updateUser(Integer userId, User updatedUser, String roleName) {
+    public void updateUser(Integer userId, User updatedUser) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        if (user.isDeleted()) {
+            throw new RuntimeException("This account is deleted.");
+        }
+
         user.setUsername(updatedUser.getUsername());
         user.setEmail(updatedUser.getEmail());
-        user.setRole(Role.valueOf(roleName));
+        user.setRole(updatedUser.getRole());
+
         userRepository.save(user);
-
-
     }
 }
 
