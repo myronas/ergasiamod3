@@ -3,6 +3,7 @@ package gr.hua.dit.ds.ergasia.controller;
 import gr.hua.dit.ds.ergasia.exception.UsernameAlreadyExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,8 +54,10 @@ public class AdminController {
         try {
             userService.updateUser(userId, user);
             return ResponseEntity.ok().body("User updated successfully.");
+        } catch (UsernameAlreadyExistsException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error updating user: " + e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error updating user: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating user: " + e.getMessage());
         }
     }
 

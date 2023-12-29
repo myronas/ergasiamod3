@@ -89,8 +89,7 @@ public class UserService {
 
         if (user.getItems() != null) {
             for (Item item : user.getItems()) {
-                // Assuming 'userId' field in Item entity links it to the User
-                item.setId(0); // Set to 0 or appropriate orphaned state
+                item.setUser(null);
                 itemRepository.save(item);
             }
         }
@@ -100,12 +99,18 @@ public class UserService {
     }
 
 
+
     @Transactional
-    public void updateUser(Integer userId, User updatedUser) {
+    public void updateUser(Integer userId, User updatedUser) throws UsernameAlreadyExistsException {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         if (user.isDeleted()) {
             throw new RuntimeException("This account is deleted.");
+        }
+
+        // Check if the new username already exists for a different user
+        if (userRepository.existsByUsernameAndIdNot(updatedUser.getUsername(), userId)) {
+            throw new UsernameAlreadyExistsException("Username already exists.");
         }
 
         user.setUsername(updatedUser.getUsername());
@@ -114,6 +119,7 @@ public class UserService {
 
         userRepository.save(user);
     }
+
 }
 
 
