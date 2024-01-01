@@ -1,6 +1,7 @@
 package gr.hua.dit.ds.ergasia.controller;
 
 import gr.hua.dit.ds.ergasia.entity.Item;
+import gr.hua.dit.ds.ergasia.entity.Role;
 import gr.hua.dit.ds.ergasia.entity.User;
 import gr.hua.dit.ds.ergasia.exception.DuplicateItemException;
 import gr.hua.dit.ds.ergasia.service.ItemService;
@@ -14,7 +15,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/main")
@@ -27,153 +31,80 @@ public class MainController {
     @Autowired
     private ItemService itemService;
 
-//    @GetMapping("/main")
-//    public ResponseEntity<?> getMainPage(Principal principal) {
-//        if (principal == null) {
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User is not authenticated.");
-//        }
-//        try {
-//            String username = principal.getName();
-//            User user = userService.findByUsername(username);
-//            List<Item> items = itemService.findAllItemsByUser(user);
-//
-//            if (items == null || items.isEmpty()) {
-//                return ResponseEntity.ok("You currently have no items.");
-//            } else {
-//                return ResponseEntity.ok(items);
-//            }
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching items.");
-//        }
-//    }@GetMapping("/items")
-//public ResponseEntity<?> getMyItems(Principal principal) {
-//    if (principal == null) {
-//        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User is not authenticated.");
-//    }
-//
-//    try {
-//        User user = userService.findByUsername(principal.getName());
-//        List<Item> items = itemService.findAllItemsByUser(user);
-//        return ResponseEntity.ok(items);
-//    } catch (Exception e) {
-//        logger.error("Error fetching items", e);
-//        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching items.");
-//    }
-//}
 
     @PostMapping("/items")
-    public ResponseEntity<?> createItem(@RequestBody Item item, Principal principal) {
+    public ResponseEntity<ApiResponse> createItem(@RequestBody Item item, Principal principal) {
         if (principal == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User is not authenticated.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse(false, "User is not authenticated."));
         }
         try {
             String username = principal.getName();
             User user = userService.findByUsername(username);
             item.setUser(user);
-            itemService.saveItem(item);
-            return ResponseEntity.ok("Item created successfully.");
+            Item savedItem = itemService.saveItem(item);
+            return ResponseEntity.ok(new ApiResponse(true, "Item created successfully.", savedItem));
         } catch (DuplicateItemException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating item.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(false, "Error creating item: " + e.getMessage()));
         }
     }
+
 
     @PutMapping("/items/{id}")
-    public ResponseEntity<?> updateItem(@PathVariable Integer id, @RequestBody Item updatedItem, Principal principal) {
+    public ResponseEntity<ApiResponse> updateItem(@PathVariable Integer id, @RequestBody Item updatedItem, Principal principal) {
         if (principal == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User is not authenticated.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse(false, "User is not authenticated."));
         }
-
         try {
-            Item existingItem = itemService.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Item not found"));
-
-            // Check if the item belongs to the authenticated user
             String username = principal.getName();
-            if (!existingItem.getUser().getUsername().equals(username)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to update this item.");
-            }
-            if (existingItem.isDeleted()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Item is already deleted and cannot be updated.");
-            }
+            User user = userService.findByUsername(username);
+            boolean isAdmin = user.getRole() == Role.ADMIN;
 
-            // Attempt to update the item, which will check for duplicate names
-            itemService.updateItem(id, updatedItem);
-            return ResponseEntity.ok("Item updated successfully.");
+            itemService.updateItem(id, updatedItem, username, isAdmin);
+            return ResponseEntity.ok(new ApiResponse(true, "Item updated successfully.", updatedItem));
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ApiResponse(false, e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating item: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(false, "Error updating item: " + e.getMessage()));
         }
     }
-
 
 
     @DeleteMapping("/items/{id}")
-    public ResponseEntity<?> deleteItem(@PathVariable Integer id, Principal principal) {
+    public ResponseEntity<ApiResponse> deleteItem(@PathVariable Integer id, Principal principal) {
         if (principal == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User is not authenticated.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse(false, "User is not authenticated."));
         }
-
         try {
-            Item item = itemService.findById(id).orElse(null);
-
-            // Check if the item exists
-            if (item == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Item not found.");
-            }
-            if(item.isDeleted()){
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Item is already deleted.");
-            }
-
             String username = principal.getName();
-            if (!item.getUser().getUsername().equals(username)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to delete this item.");
-            }
+            User user = userService.findByUsername(username);
+            boolean isAdmin = user.getRole() == Role.ADMIN;
 
-            itemService.deleteItem(id);
-            return ResponseEntity.ok("Item deleted successfully.");
+            itemService.deleteItem(id, username, isAdmin);
+            return ResponseEntity.ok(new ApiResponse(true, "Item deleted successfully."));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ApiResponse(false, e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting item: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(false, "Error deleting item: " + e.getMessage()));
         }
     }
-//    @GetMapping("/items")
-//    public ResponseEntity<List<Item>> getMyItems(Principal principal) {
-//        if (principal == null) {
-//            // If you want to return a string message in ResponseEntity of type List<Item>, you cannot directly return a string.
-//            // You need to return an empty list with the error status or change the method return type to ResponseEntity<?>.
-//            // For this example, let's return an empty list with the error status:
-//            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.UNAUTHORIZED);
-//        }
-//
-//        try {
-//            User user = userService.findByUsername(principal.getName());
-//            List<Item> items = itemService.findAllItemsByUser(user);
-//
-//            if (items.isEmpty()) {
-//                // Return an empty list with HTTP status 204 - No Content
-//                return new ResponseEntity<>(Collections.emptyList(), HttpStatus.NO_CONTENT);
-//            } else {
-//                // Return the list of items with HTTP status 200 - OK
-//                return new ResponseEntity<>(items, HttpStatus.OK);
-//            }
-//        } catch (Exception e) {
-//            // Log the error for internal tracking
-//            logger.error("Error fetching items", e);
-//
-//            // Return an empty list with HTTP status 500 - Internal Server Error
-//            // You could also return a custom error object if you have one
-//            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.INTERNAL_SERVER_ERROR);
-//        }
-//    }
+
 
 
 
     @PatchMapping("/items/hide/{id}")
-    public ResponseEntity<?> hideItem(@PathVariable Integer id, Principal principal) {
+    public ResponseEntity<ApiResponse>hideItem(@PathVariable Integer id, Principal principal) {
         if (principal == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User is not authenticated.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse(false, "User is not authenticated."));
         }
 
         try {
@@ -182,39 +113,106 @@ public class MainController {
             Item item = itemService.findById(id)
                     .orElseThrow(() -> new RuntimeException("Item not found"));
 
-            // Check if the item belongs to the user
             if (!item.getUser().getId().equals(user.getId())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to hide this item.");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ApiResponse(false, "You are not authorized to hide this item."));
             }
 
-            // Check if the item is already deleted
             if (item.isDeleted()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Item is already deleted and cannot be hidden.");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse(false, "Item is already deleted and cannot be hidden."));
             }
 
-            // Hide the item since it's not deleted
             itemService.hideItem(id);
-            return ResponseEntity.ok("Item hidden successfully.");
+            return ResponseEntity.ok(new ApiResponse(true, "Item hidden successfully."));
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse(false, e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error hiding item: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(false, "Error hiding item: " + e.getMessage()));
         }
     }
 
 
+
     @PatchMapping("/items/lift")
-    public ResponseEntity<?> liftItem(Principal principal) {
+    public ResponseEntity<ApiResponse> liftItem(Principal principal) {
         if (principal == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User is not authenticated.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse(false, "User is not authenticated."));
         }
 
         try {
             String username = principal.getName();
             itemService.liftHiddenItem(username); // Adjust this method to handle only user's items
-            return ResponseEntity.ok("Hidden items lifted successfully.");
+            return ResponseEntity.ok(new ApiResponse(true, "Hidden items lifted successfully."));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error lifting hidden items: " + e.getMessage());
+            logger.error("Error lifting hidden items", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(false, "Error lifting hidden items: " + e.getMessage()));
         }
     }
+    @GetMapping("/my-items")
+    public ResponseEntity<Map<String, Object>> getMyItems(Principal principal) {
+        Map<String, Object> response = new HashMap<>();
+        if (principal == null) {
+            response.put("success", false);
+            response.put("message", "User is not authenticated.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
+        try {
+            String username = principal.getName();
+            User user = userService.findByUsername(username);
+            List<Item> items = itemService.findAllItemsByUser(user);
+
+            response.put("success", true);
+            response.put("message", "Items fetched successfully.");
+            response.put("data", items);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Error fetching items", e);
+            response.put("success", false);
+            response.put("message", "Error fetching items: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    public class ApiResponse {
+        private boolean success;
+        private String message;
+        private Object data;
+
+        public ApiResponse(boolean success, String message, Object data) {
+            this.success = success;
+            this.message = message;
+            this.data = data;
+        }
+        public ApiResponse(boolean success, String message) {
+            this.success = success;
+            this.message = message;
+            this.data = null; // Default to null when not provided
+        }
+
+        // Getters and Setters
+        public boolean isSuccess() {
+            return success;
+        }
+
+        public void setSuccess(boolean success) {
+            this.success = success;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
+        }
+
+        public Object getData() {
+            return data;
+        }
+
+        public void setData(Object data) {
+            this.data = data;
+        }
+    }
+
 }

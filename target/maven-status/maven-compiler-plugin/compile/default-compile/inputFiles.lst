@@ -6,6 +6,7 @@
 /home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/jwt/JwtRequestFilter.java
 /home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/handlers/GlobalExceptionHandler.java
 /home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/controller/RegistrationController.java
+/home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/dto/UserDTO.java
 /home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/handlers/CustomAuthenticationSuccessHandler.java
 /home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/jwt/UserDetailsServiceImpl.java
 /home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/service/UserService.java
@@ -13,6 +14,7 @@
 /home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/ErgasiaApplication.java
 /home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/handlers/CustomAuthenticationFailureHandler.java
 /home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/exception/UsernameAlreadyExistsException.java
+/home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/dto/ItemDTO.java
 /home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/entity/Role.java
 /home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/controller/MainController.java
 /home/myronas/Projects/ergasiamod3/src/main/java/gr/hua/dit/ds/ergasia/exception/DuplicateItemException.java

@@ -52,37 +52,43 @@ public class ItemService {
         }
     }
 
-    public boolean updateItem(Integer id, Item updatedItem) {
-        // Find the existing item by id
+    public boolean updateItem(Integer id, Item updatedItem, String username, boolean isAdmin) {
         Item item = itemRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Item not found"));
 
-        // Check for duplicates except the current item
-        boolean nameExists = itemRepository.existsByNameAndIdNot(updatedItem.getName(), id);
+        if (!isAdmin && !item.getUser().getUsername().equals(username)) {
+            throw new RuntimeException("You are not authorized to update this item.");
+        }
 
-        if(nameExists) {
-            // Throw an exception or return false indicating a duplicate name exists
+        if (item.isDeleted()) {
+            throw new RuntimeException("Item is already deleted and cannot be updated.");
+        }
+
+        boolean nameExists = itemRepository.existsByNameAndIdNot(updatedItem.getName(), id);
+        if (nameExists) {
             throw new RuntimeException("An item with this name already exists.");
         }
 
-        // No duplicates, proceed with update
         item.setName(updatedItem.getName());
-        // Update other fields as necessary
-        item.setUpdatedAt(LocalDateTime.now()); // Update the 'updatedAt' timestamp
+        item.setUpdatedAt(LocalDateTime.now());
         itemRepository.save(item);
-        return true; // Update successful
+        return true;
     }
 
-
-    public  void deleteItem(Integer id) {
-        logger.debug("Fetching item for soft delete with id: " + id);
+    public void deleteItem(Integer id, String username, boolean isAdmin) {
         Item item = itemRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Item not found with id: " + id));
 
-        logger.debug("Item before soft delete: " + item);
+        if (!isAdmin && !item.getUser().getUsername().equals(username)) {
+            throw new RuntimeException("You are not authorized to delete this item.");
+        }
+
+        if (item.isDeleted()) {
+            throw new RuntimeException("Item is already deleted.");
+        }
+
         item.setDeletedAt(LocalDateTime.now());
         itemRepository.save(item);
-        logger.debug("Item after soft delete: " + item);
     }
     public void hideItem(Integer itemId) {
         Item item = itemRepository.findById(itemId)

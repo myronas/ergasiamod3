@@ -1,5 +1,7 @@
 package gr.hua.dit.ds.ergasia.service;
 
+import gr.hua.dit.ds.ergasia.dto.ItemDTO;
+import gr.hua.dit.ds.ergasia.dto.UserDTO;
 import gr.hua.dit.ds.ergasia.entity.Item;
 import gr.hua.dit.ds.ergasia.entity.Role;
 import gr.hua.dit.ds.ergasia.entity.User;
@@ -18,6 +20,8 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 
 @Service
 public class UserService {
@@ -32,6 +36,7 @@ public class UserService {
     public Optional<User> findById(Integer id) {
         return userRepository.findById(id);
     }
+
 
     public void registerNewUserAccount(User user) throws UsernameAlreadyExistsException {
         if (userRepository.findByUsername(user.getUsername()).isPresent()) {
@@ -119,7 +124,28 @@ public class UserService {
 
         userRepository.save(user);
     }
+    public UserDTO convertToDTO(User user) {
+        UserDTO dto = new UserDTO();
+        dto.setId(user.getId());
+        dto.setUsername(user.getUsername());
+        dto.setEmail(user.getEmail());
+        dto.setCreatedAt(user.getCreatedAt());
+        dto.setItems(user.getItems().stream()
+                .map(this::convertItemToDTO)
+                .collect(Collectors.toList()));
 
+        return dto;
+    }
+
+    private ItemDTO convertItemToDTO(Item item) {
+        ItemDTO dto = new ItemDTO();
+        dto.setId(item.getId());
+        dto.setName(item.getName());
+        dto.setCreatedAt(item.getCreatedAt());
+        return dto;
+    }
 }
+
+
 
 
