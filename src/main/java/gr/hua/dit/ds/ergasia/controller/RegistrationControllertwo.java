@@ -23,7 +23,7 @@ public class RegistrationControllertwo {
     @GetMapping("/register")
     public String showRegistrationForm(Model model) {
 
-        model.addAttribute("user", new RegistrationDto()); // Add this line
+        model.addAttribute("user", new RegistrationDto());
         return "register";
     }
 
@@ -35,7 +35,7 @@ public class RegistrationControllertwo {
 
         if (response.getStatusCode() == HttpStatus.OK) {
             model.addAttribute("message", "Registration successful");
-            return "about";
+            return "index";
         } else {
             model.addAttribute("errorMessage", "Registration failed");
             return "register";

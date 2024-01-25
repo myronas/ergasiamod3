@@ -1,130 +1,125 @@
 //package gr.hua.dit.ds.ergasia.service;
 //
-//import gr.hua.dit.ds.ergasia.entity.Item;
-//import gr.hua.dit.ds.ergasia.entity.User;
-//import gr.hua.dit.ds.ergasia.exception.DuplicateItemException;
-//import gr.hua.dit.ds.ergasia.repository.ItemRepository;
-//import gr.hua.dit.ds.ergasia.repository.UserRepository;
-//import jakarta.persistence.Id;
-//import jakarta.transaction.Transactional;
+//import gr.hua.dit.ds.ergasia.dto.ItemDTO;
 //import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.http.*;
 //import org.springframework.stereotype.Service;
+//import org.springframework.web.client.RestTemplate;
+//import org.springframework.web.client.HttpClientErrorException;
 //
-//import org.slf4j.Logger;
-//import org.slf4j.LoggerFactory;
-//import org.springframework.stereotype.Service;
-//import java.time.LocalDateTime;
+//import jakarta.servlet.http.HttpSession;
+//import java.util.Arrays;
+//import java.util.Collections;
 //import java.util.List;
-//import java.util.Optional;
-//import java.util.Random;
 //
 //@Service
 //public class ItemService {
-//    private  static final Logger logger = LoggerFactory.getLogger(ItemService.class);
+//    private final RestTemplate restTemplate;
+//    private final String backendBaseUrl = "http://host.docker.internal:10007/api/main";
+//
 //    @Autowired
-//    private ItemRepository itemRepository;
-//    @Autowired
-//    private UserRepository userRepository;
-//
-//    public List<Item> findAllItemsByUser(User user) {
-//        return itemRepository.findByUserAndDeletedAtIsNull(user);
+//    public ItemService(RestTemplate restTemplate) {
+//        this.restTemplate = restTemplate;
 //    }
 //
+//    public String createItem(ItemDTO item, HttpSession session) {
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.setContentType(MediaType.APPLICATION_JSON);
+//        headers.setBearerAuth(getAuthToken(session));
 //
-//
-//    public List<Item> findAllItems() {
-//        return itemRepository.findAll();
-//    }
-//    public Optional<Item> findById(Integer id) {
-//        return itemRepository.findById(id);
-//    }
-//
-//
-//    public Item saveItem(Item item) throws DuplicateItemException {
-//        if (itemRepository.existsByName(item.getName())) {
-//            throw new DuplicateItemException("An item with the name " + item.getName() + " already exists.");
-//        }
-//        if (item != null && item.getName() != null && !item.getName().isEmpty()) {
-//
-//            return itemRepository.save(item);
-//        } else {
-//            throw new IllegalArgumentException("Item details are not complete.");
+//        HttpEntity<ItemDTO> entity = new HttpEntity<>(item, headers);
+//        try {
+//            ResponseEntity<String> response = restTemplate.postForEntity(
+//                    backendBaseUrl + "/items", entity, String.class);
+//            return response.getBody();
+//        } catch (HttpClientErrorException e) {
+//            return "Error: " + e.getStatusCode() + " - " + e.getResponseBodyAsString();
 //        }
 //    }
 //
-//    public boolean updateItem(Integer id, Item updatedItem, String username, boolean isAdmin) {
-//        Item item = itemRepository.findById(id)
-//                .orElseThrow(() -> new RuntimeException("Item not found"));
-//
-//        if (!isAdmin && !item.getUser().getUsername().equals(username)) {
-//            throw new RuntimeException("You are not authorized to update this item.");
+//    public ItemDTO getItemById(Integer id) {
+//        try {
+//            ResponseEntity<ItemDTO> response = restTemplate.getForEntity(
+//                    backendBaseUrl + "/items/" + id, ItemDTO.class);
+//            return response.getBody();
+//        } catch (HttpClientErrorException e) {
+//            // Handle exception or return null
+//            return null;
 //        }
-//
-//        if (item.isDeleted()) {
-//            throw new RuntimeException("Item is already deleted and cannot be updated.");
-//        }
-//
-//        boolean nameExists = itemRepository.existsByNameAndIdNot(updatedItem.getName(), id);
-//        if (nameExists) {
-//            throw new RuntimeException("An item with this name already exists.");
-//        }
-//
-//        item.setName(updatedItem.getName());
-//        item.setUpdatedAt(LocalDateTime.now());
-//        itemRepository.save(item);
-//        return true;
 //    }
 //
-//    public void deleteItem(Integer id, String username, boolean isAdmin) {
-//        Item item = itemRepository.findById(id)
-//                .orElseThrow(() -> new RuntimeException("Item not found with id: " + id));
+//    public String updateItem(Integer id, ItemDTO item, HttpSession session) {
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.setContentType(MediaType.APPLICATION_JSON);
+//        headers.setBearerAuth(getAuthToken(session));
 //
-//        if (!isAdmin && !item.getUser().getUsername().equals(username)) {
-//            throw new RuntimeException("You are not authorized to delete this item.");
+//        HttpEntity<ItemDTO> entity = new HttpEntity<>(item, headers);
+//        try {
+//            restTemplate.exchange(
+//                    backendBaseUrl + "/items/" + id, HttpMethod.PUT, entity, Void.class);
+//            return "Item updated successfully";
+//        } catch (HttpClientErrorException e) {
+//            return "Error: " + e.getStatusCode() + " - " + e.getResponseBodyAsString();
 //        }
+//    }
 //
-//        if (item.isDeleted()) {
-//            throw new RuntimeException("Item is already deleted.");
+//    public String deleteItem(Integer id, HttpSession session) {
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.setBearerAuth(getAuthToken(session));
+//
+//        HttpEntity<?> entity = new HttpEntity<>(headers);
+//        try {
+//            restTemplate.exchange(
+//                    backendBaseUrl + "/items/" + id, HttpMethod.DELETE, entity, Void.class);
+//            return "Item deleted successfully";
+//        } catch (HttpClientErrorException e) {
+//            return "Error: " + e.getStatusCode() + " - " + e.getResponseBodyAsString();
 //        }
+//    }
 //
-//        item.setDeletedAt(LocalDateTime.now());
-//        itemRepository.save(item);
-//    }
-//    public void hideItem(Integer itemId) {
-//        Item item = itemRepository.findById(itemId)
-//                .orElseThrow(() -> new RuntimeException("Item not found with id: " + itemId));
-//        item.setUser(null); // Setting user to null to represent that it's hidden
-//        itemRepository.save(item);
-//    }
-//    @Transactional
-//    public void liftHiddenItem(String username) {
-//        // Retrieve a list of hidden items (items with null user)
-//        List<Item> hiddenItems = itemRepository.findByUserIsNull();
-//        if (hiddenItems.isEmpty()) {
-//            throw new RuntimeException("No hidden items available to lift.");
+//    public String hideItem(Integer id, HttpSession session) {
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.setBearerAuth(getAuthToken(session));
+//
+//        HttpEntity<?> entity = new HttpEntity<>(headers);
+//        try {
+//            restTemplate.exchange(
+//                    backendBaseUrl + "/items/hide/" + id, HttpMethod.PATCH, entity, Void.class);
+//            return "Item hidden successfully";
+//        } catch (HttpClientErrorException e) {
+//            return "Error: " + e.getStatusCode() + " - " + e.getResponseBodyAsString();
 //        }
-//
-//        // Randomly select one of the hidden items
-//        Random random = new Random();
-//        int randomIndex = random.nextInt(hiddenItems.size());
-//        Item selectedItem = hiddenItems.get(randomIndex);
-//
-//        // Assign the selected item to the user
-//        User user = userRepository.findByUsername(username)
-//                .orElseThrow(() -> new RuntimeException("User not found: " + username));
-//        selectedItem.setUser(user);
-//
-//        itemRepository.save(selectedItem);
 //    }
 //
+//    public String liftHiddenItems(HttpSession session) {
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.setBearerAuth(getAuthToken(session));
 //
-//
-//    public List<Item> findAllItemsForAdmin() {
-//        return itemRepository.findAll();
+//        HttpEntity<?> entity = new HttpEntity<>(headers);
+//        try {
+//            restTemplate.exchange(
+//                    backendBaseUrl + "/items/lift", HttpMethod.PATCH, entity, Void.class);
+//            return "Hidden items lifted successfully";
+//        } catch (HttpClientErrorException e) {
+//            return "Error: " + e.getStatusCode() + " - " + e.getResponseBodyAsString();
+//        }
 //    }
 //
+//    public List<ItemDTO> getMyItems(HttpSession session) {
+//        HttpHeaders headers = new HttpHeaders();
+//        headers.setBearerAuth(getAuthToken(session));
 //
+//        try {
+//            ResponseEntity<ItemDTO[]> response = restTemplate.exchange(
+//                    backendBaseUrl + "/my-items", HttpMethod.GET, new HttpEntity<>(headers), ItemDTO[].class);
+//            return Arrays.asList(response.getBody());
+//        } catch (HttpClientErrorException e) {
+//            // Handle exception or return an empty list
+//            return Collections.emptyList();
+//        }
+//    }
 //
-//
+//    private String getAuthToken(HttpSession session) {
+//        return (String) session.getAttribute("AuthToken");
+//    }
 //}
-//

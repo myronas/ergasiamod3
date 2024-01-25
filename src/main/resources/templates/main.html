@@ -7,59 +7,44 @@
     <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
-<!-- Navigation Bar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <a class="navbar-brand" href="#">Find the Treasure</a>
-    <!-- Other navigation content -->
-</nav>
+
+<!-- Navigation Bar Here -->
 
 <div class="container mt-4">
-    <h1 class="text-center">Welcome to Your Dashboard</h1>
+    <h1>Your Items</h1>
+    <a href="/main/new-item" class="btn btn-success mb-3">Create a New Item</a>
 
-    <!-- Feedback Messages -->
-    <div th:if="${successMessage}" class="alert alert-success">
-        <p th:text="${successMessage}"></p>
+
+    <!-- List of items -->
+    <div th:each="item : ${items}">
+        <div>
+            <span th:text="${item.name}">Item Name</span>
+            <!-- Update and Delete buttons -->
+            <a th:href="@{/main/items/edit/{id}(id=${item.id})}" class="btn btn-primary">Update</a>
+            <form th:action="@{/main/items/delete}" method="post" class="d-inline">
+                <input type="hidden" th:value="${item.id}" name="id" />
+                <button type="submit" class="btn btn-danger">Delete</button>
+            </form>
+            <!-- Hide Button -->
+            <form th:action="@{/main/items/hide}" method="post" class="d-inline">
+                <input type="hidden" th:value="${item.id}" name="id" />
+                <button type="submit" class="btn btn-secondary">Hide</button>
+            </form>
+        </div>
     </div>
-    <div th:if="${errorMessage}" class="alert alert-danger">
-        <p th:text="${errorMessage}"></p>
-    </div>
 
-    <!-- Create and Lift Item Buttons -->
-    <div class="text-center mb-3">
-        <a th:href="@{/items/new}" class="btn btn-success">Create New Item</a>
-        <a th:href="@{/items/lift}" class="btn btn-info">Lift Hidden Item</a>
-    </div>
-
-    <!-- Display Items -->
-    <h2>Your Items:</h2>
-    <ul class="list-group">
-        <li th:each="item : ${items}" class="list-group-item">
-            <span th:text="${item.name}"></span>
-            <!-- Edit, Delete, Hide Buttons -->
-            <div class="float-right">
-                <a th:href="@{/items/{id}/edit(id=${item.id})}" class="btn btn-primary">Edit</a>
-                <a th:href="@{/items/{id}/delete(id=${item.id})}" class="btn btn-danger">Delete</a>
-                <a th:href="@{/items/hide/{id}(id=${item.id})}" class="btn btn-secondary">Hide</a>
-            </div>
-        </li>
-    </ul>
-
+    <!-- Button to lift hidden items -->
+    <form th:action="@{/main/items/lift}" method="post">
+        <button type="submit" class="btn btn-info">Lift Hidden Items</button>
+    </form>
     <!-- Logout Button -->
-    <form action="#" th:action="@{/logout}" method="post" class="mt-4">
-        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-        <button type="submit" class="btn btn-danger">Logout</button>
+    <form th:action="@{/logout}" method="post">
+        <button type="submit" class="btn btn-warning">Logout</button>
     </form>
 </div>
 
-<!-- Footer -->
-<footer class="footer bg-dark text-white mt-4 py-3">
-    <div class="container text-center">
-        <p>&copy; 2023 Find the Treasure. All rights reserved.</p>
-    </div>
-</footer>
-
 <!-- Bootstrap JS and dependencies -->
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.5.1.slim"></script>
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>

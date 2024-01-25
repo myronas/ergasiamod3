@@ -20,7 +20,7 @@ public class RegistrationService {
     }
 
     public ResponseEntity<?> registerUser(RegistrationDto registrationDto) {
-        logger.info("Registering user: " + registrationDto.getUsername()); // Log username or other non-sensitive info
+        logger.info("Registering user: " + registrationDto.getUsername());
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);

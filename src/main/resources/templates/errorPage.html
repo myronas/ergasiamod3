@@ -1,42 +1,52 @@
 <!DOCTYPE html>
-<html>
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Error - Find the Treasure</title>
+    <title>Main Page</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
-<!-- Navigation Bar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container">
-        <a class="navbar-brand" href="/">Find the Treasure</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="/">Home</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/about">About</a>
-                </li>
-                <!-- Other navigation items -->
-            </ul>
+<!-- Your Navigation Bar Here -->
+
+<div class="container mt-4">
+    <h1>Your Items</h1>
+    <!-- Button to create a new item -->
+    <a href="/main/new-item" class="btn btn-success mb-3">Create a New Item</a>
+    <!-- Button to lift hidden items -->
+    <form th:action="@{/main/items/lift}" method="post" class="mb-3">
+        <button type="submit" class="btn btn-info">Lift Hidden Items</button>
+    </form>
+
+    <!-- Items List -->
+    <div th:each="item : ${items}" class="mb-3">
+        <div class="row align-items-center">
+            <!-- Item Name -->
+            <div class="col-md-4" th:text="${item.name}">Item Name</div>
+
+            <!-- Buttons -->
+            <div class="col-md-8 text-right">
+                <!-- Update Button -->
+                <a th:href="@{/main/items/edit/{id}(id=${item.id})}" class="btn btn-primary">Update</a>
+                <!-- Delete Button -->
+                <form th:action="@{/main/items/delete}" method="post" class="d-inline">
+                    <input type="hidden" th:value="${item.id}" name="id" />
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+                <!-- Hide Button -->
+                <form th:action="@{/main/items/hide}" method="post" class="d-inline">
+                    <input type="hidden" th:value="${item.id}" name="id" />
+                    <button type="submit" class="btn btn-secondary">Hide</button>
+                </form>
+            </div>
         </div>
     </div>
-</nav>
 
-<!-- Error Content -->
-<div class="container main-content mt-4">
-    <h1 class="text-center text-danger">Error Encountered</h1>
-    <p class="text-center" th:text="${error}">Error details</p>
-    <!-- Additional error page content -->
+    <!-- Logout Button -->
+    <form th:action="@{/logout}" method="post" class="mb-3">
+        <button type="submit" class="btn btn-warning">Logout</button>
+    </form>
 </div>
-
-<!-- Footer -->
-
 
 <!-- Bootstrap JS and dependencies -->
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>

@@ -1,218 +1,167 @@
-//package gr.hua.dit.ds.ergasia.controller;
-//
-//import gr.hua.dit.ds.ergasia.entity.Item;
-//import gr.hua.dit.ds.ergasia.entity.Role;
-//import gr.hua.dit.ds.ergasia.entity.User;
-//import gr.hua.dit.ds.ergasia.exception.DuplicateItemException;
-//import gr.hua.dit.ds.ergasia.service.ItemService;
-//import gr.hua.dit.ds.ergasia.service.UserService;
-//import org.slf4j.Logger;
-//import org.slf4j.LoggerFactory;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.http.HttpStatus;
-//import org.springframework.http.ResponseEntity;
-//import org.springframework.web.bind.annotation.*;
-//
-//import java.security.Principal;
-//import java.util.Collections;
-//import java.util.HashMap;
-//import java.util.List;
-//import java.util.Map;
-//import java.util.stream.Collectors;
-//
-//@RestController
-//@RequestMapping("/api/main")
-//public class MainController {
-//    private static final Logger logger = LoggerFactory.getLogger(MainController.class);
-//
-//    @Autowired
-//    private UserService userService;
-//
-//    @Autowired
-//    private ItemService itemService;
-//
-//
-//    @PostMapping("/items")
-//    public ResponseEntity<ApiResponse> createItem(@RequestBody Item item, Principal principal) {
-//        if (principal == null) {
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-//                    .body(new ApiResponse(false, "User is not authenticated."));
-//        }
-//        try {
-//            String username = principal.getName();
-//            User user = userService.findByUsername(username);
-//            item.setUser(user);
-//            Item savedItem = itemService.saveItem(item);
-//            return ResponseEntity.ok(new ApiResponse(true, "Item created successfully.", savedItem));
-//        } catch (DuplicateItemException e) {
-//            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                    .body(new ApiResponse(false, "Error creating item: " + e.getMessage()));
-//        }
-//    }
-//
-//
-//    @PutMapping("/items/{id}")
-//    public ResponseEntity<ApiResponse> updateItem(@PathVariable Integer id, @RequestBody Item updatedItem, Principal principal) {
-//        if (principal == null) {
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-//                    .body(new ApiResponse(false, "User is not authenticated."));
-//        }
-//        try {
-//            String username = principal.getName();
-//            User user = userService.findByUsername(username);
-//            boolean isAdmin = user.getRole() == Role.ADMIN;
-//
-//            itemService.updateItem(id, updatedItem, username, isAdmin);
-//            return ResponseEntity.ok(new ApiResponse(true, "Item updated successfully.", updatedItem));
-//        } catch (RuntimeException e) {
-//            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-//                    .body(new ApiResponse(false, e.getMessage()));
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                    .body(new ApiResponse(false, "Error updating item: " + e.getMessage()));
-//        }
-//    }
-//
-//
-//    @DeleteMapping("/items/{id}")
-//    public ResponseEntity<ApiResponse> deleteItem(@PathVariable Integer id, Principal principal) {
-//        if (principal == null) {
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-//                    .body(new ApiResponse(false, "User is not authenticated."));
-//        }
-//        try {
-//            String username = principal.getName();
-//            User user = userService.findByUsername(username);
-//            boolean isAdmin = user.getRole() == Role.ADMIN;
-//
-//            itemService.deleteItem(id, username, isAdmin);
-//            return ResponseEntity.ok(new ApiResponse(true, "Item deleted successfully."));
-//        } catch (RuntimeException e) {
-//            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-//                    .body(new ApiResponse(false, e.getMessage()));
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                    .body(new ApiResponse(false, "Error deleting item: " + e.getMessage()));
-//        }
-//    }
-//
-//
-//
-//
-//    @PatchMapping("/items/hide/{id}")
-//    public ResponseEntity<ApiResponse>hideItem(@PathVariable Integer id, Principal principal) {
-//        if (principal == null) {
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse(false, "User is not authenticated."));
-//        }
-//
-//        try {
-//            String username = principal.getName();
-//            User user = userService.findByUsername(username);
-//            Item item = itemService.findById(id)
-//                    .orElseThrow(() -> new RuntimeException("Item not found"));
-//
-//            if (!item.getUser().getId().equals(user.getId())) {
-//                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ApiResponse(false, "You are not authorized to hide this item."));
-//            }
-//
-//            if (item.isDeleted()) {
-//                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse(false, "Item is already deleted and cannot be hidden."));
-//            }
-//
-//            itemService.hideItem(id);
-//            return ResponseEntity.ok(new ApiResponse(true, "Item hidden successfully."));
-//        } catch (RuntimeException e) {
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse(false, e.getMessage()));
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(false, "Error hiding item: " + e.getMessage()));
-//        }
-//    }
-//
-//
-//
-//    @PatchMapping("/items/lift")
-//    public ResponseEntity<ApiResponse> liftItem(Principal principal) {
-//        if (principal == null) {
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse(false, "User is not authenticated."));
-//        }
-//
-//        try {
-//            String username = principal.getName();
-//            itemService.liftHiddenItem(username); // Adjust this method to handle only user's items
-//            return ResponseEntity.ok(new ApiResponse(true, "Hidden items lifted successfully."));
-//        } catch (Exception e) {
-//            logger.error("Error lifting hidden items", e);
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(false, "Error lifting hidden items: " + e.getMessage()));
-//        }
-//    }
-//    @GetMapping("/my-items")
-//    public ResponseEntity<Map<String, Object>> getMyItems(Principal principal) {
-//        Map<String, Object> response = new HashMap<>();
-//        if (principal == null) {
-//            response.put("success", false);
-//            response.put("message", "User is not authenticated.");
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-//        }
-//
-//        try {
-//            String username = principal.getName();
-//            User user = userService.findByUsername(username);
-//            List<Item> items = itemService.findAllItemsByUser(user);
-//
-//            response.put("success", true);
-//            response.put("message", "Items fetched successfully.");
-//            response.put("data", items);
-//            return ResponseEntity.ok(response);
-//        } catch (Exception e) {
-//            logger.error("Error fetching items", e);
-//            response.put("success", false);
-//            response.put("message", "Error fetching items: " + e.getMessage());
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-//        }
-//    }
-//
-//    public class ApiResponse {
-//        private boolean success;
-//        private String message;
-//        private Object data;
-//
-//        public ApiResponse(boolean success, String message, Object data) {
-//            this.success = success;
-//            this.message = message;
-//            this.data = data;
-//        }
-//        public ApiResponse(boolean success, String message) {
-//            this.success = success;
-//            this.message = message;
-//            this.data = null; // Default to null when not provided
-//        }
-//
-//        // Getters and Setters
-//        public boolean isSuccess() {
-//            return success;
-//        }
-//
-//        public void setSuccess(boolean success) {
-//            this.success = success;
-//        }
-//
-//        public String getMessage() {
-//            return message;
-//        }
-//
-//        public void setMessage(String message) {
-//            this.message = message;
-//        }
-//
-//        public Object getData() {
-//            return data;
-//        }
-//
-//        public void setData(Object data) {
-//            this.data = data;
-//        }
-//    }
-//
-//}
+package gr.hua.dit.ds.ergasia.controller;
+
+import gr.hua.dit.ds.ergasia.dto.ApiResponse;
+import gr.hua.dit.ds.ergasia.dto.ItemDTO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.*;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import jakarta.servlet.http.HttpSession;
+import java.util.List;
+
+@Controller
+@RequestMapping("/main")
+public class MainController {
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    @Autowired
+    private HttpSession session;
+
+    private final String backendBaseUrl = "http://host.docker.internal:10007/api/main";
+
+    @GetMapping
+    public String mainPage(Model model) {
+        ResponseEntity<ApiResponse<List<ItemDTO>>> response = restTemplate.exchange(
+                backendBaseUrl + "/my-items",
+                HttpMethod.GET,
+                new HttpEntity<>(createHeaders()),
+                new ParameterizedTypeReference<ApiResponse<List<ItemDTO>>>() {}
+        );
+
+        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+            ApiResponse<List<ItemDTO>> apiResponse = response.getBody();
+            if (apiResponse.isSuccess() && apiResponse.getData() != null) {
+                model.addAttribute("items", apiResponse.getData());
+            } else {
+                model.addAttribute("errorMessage", "No items found or an error occurred.");
+            }
+        } else {
+            // Handle error case
+            // You may add an error message to the model to display in the UI
+            model.addAttribute("errorMessage", "Error retrieving items: " + response.getStatusCode());
+        }
+        return "main";
+    }
+
+    @PostMapping("/items")
+    public String createItem(@ModelAttribute ItemDTO item, RedirectAttributes redirectAttributes) {
+        ResponseEntity<String> response = restTemplate.exchange(
+                backendBaseUrl + "/items",
+                HttpMethod.POST,
+                new HttpEntity<>(item, createHeaders()),
+                String.class
+        );
+
+        handleResponse(redirectAttributes, response);
+        return "redirect:/main";
+    }
+
+
+    @PostMapping("/items/update")
+    public String updateItem(@ModelAttribute ItemDTO item, RedirectAttributes redirectAttributes) {
+        HttpHeaders headers = createHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<ItemDTO> entity = new HttpEntity<>(item, headers);
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                backendBaseUrl + "/items/" + item.getId(),
+                HttpMethod.PUT,
+                entity,
+                String.class
+        );
+
+        handleResponse(redirectAttributes, response);
+        return "redirect:/main";
+    }
+
+
+    @PostMapping("/items/delete")
+    public String deleteItem(@RequestParam Integer id, RedirectAttributes redirectAttributes) {
+        ResponseEntity<String> response = restTemplate.exchange(
+                backendBaseUrl + "/items/" + id,
+                HttpMethod.DELETE,
+                new HttpEntity<>(createHeaders()),
+                String.class
+        );
+
+        handleResponse(redirectAttributes, response);
+        return "redirect:/main";
+    }
+
+    @PostMapping("/items/hide")
+    public String hideItem(@RequestParam Integer id, RedirectAttributes redirectAttributes) {
+        ResponseEntity<String> response = restTemplate.exchange(
+                backendBaseUrl + "/items/hide/" + id,
+                HttpMethod.PATCH,
+                new HttpEntity<>(createHeaders()),
+                String.class
+        );
+
+        handleResponse(redirectAttributes, response);
+        return "redirect:/main";
+    }
+
+    @PostMapping("/items/lift")
+    public String liftHiddenItems(RedirectAttributes redirectAttributes) {
+        ResponseEntity<String> response = restTemplate.exchange(
+                backendBaseUrl + "/items/lift",
+                HttpMethod.PATCH,
+                new HttpEntity<>(createHeaders()),
+                String.class
+        );
+
+        handleResponse(redirectAttributes, response);
+        return "redirect:/main";
+    }
+
+    private HttpHeaders createHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        String token = (String) session.getAttribute("AuthToken");
+        if (token != null) {
+            headers.setBearerAuth(token);
+        }
+        return headers;
+    }
+
+    private void handleResponse(RedirectAttributes redirectAttributes, ResponseEntity<String> response) {
+        if (response.getStatusCode().is2xxSuccessful()) {
+            redirectAttributes.addFlashAttribute("successMessage", "Operation successful.");
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage", "Operation failed: " + response.getStatusCode());
+        }
+    }
+    @GetMapping("/new-item")
+    public String showCreateItemForm(Model model) {
+        model.addAttribute("item", new ItemDTO());
+        return "itemForm";
+    }
+    @GetMapping("/items/edit/{id}")
+    public String showUpdateItemForm(@PathVariable Integer id, Model model) {
+        ResponseEntity<ApiResponse<ItemDTO>> response = restTemplate.exchange(
+                backendBaseUrl + "/items/" + id,
+                HttpMethod.GET,
+                new HttpEntity<>(createHeaders()),
+                new ParameterizedTypeReference<ApiResponse<ItemDTO>>() {}
+        );
+
+        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null && response.getBody().getData() != null) {
+            model.addAttribute("item", response.getBody().getData());
+            return "itemEditForm";
+        } else {
+            // Error handling
+            return "redirect:/main";
+        }
+    }
+
+
+
+
+}
